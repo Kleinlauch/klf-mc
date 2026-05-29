@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Schiff WebRemote</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        /* LIQUID GLASS DESIGN */
+        :root { --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.2); }
+        body { 
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
+            color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+        }
+        #notification-banner {
+            position: fixed; top: -100px; left: 5%; width: 90%; background: rgba(255, 50, 50, 0.8);
+            backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center;
+            font-weight: bold; transition: top 0.5s ease; z-index: 1000; border: 1px solid red; box-sizing: border-box;
+        }
+        .nav-bar {
+            display: flex; overflow-x: auto; padding: 15px; background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+        }
+        .nav-btn {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); color: white;
+            padding: 10px 20px; border-radius: 20px; margin-right: 10px; cursor: pointer; white-space: nowrap;
+        }
+        .nav-btn.active { background: rgba(255, 165, 0, 0.6); }
+        
+        .view-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: none; }
+        .view-container.active { display: block; }
+        
+        .glass-panel {
+            background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3);
+        }
+        
+        /* Progress Bars */
+        .progress-bg { background: rgba(255,255,255,0.1); height: 20px; border-radius: 10px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; background: #00ff00; width: 0%; transition: width 0.3s; }
+        .progress-fill.red { background: #ff3333; }
+        .progress-fill.orange { background: #ffa500; }
+        
+        /* Bridge Remote D-Pad */
+        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
+        .pad-btn { 
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 15px; 
+            height: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer;
+        }
+        .pad-btn:active { background: rgba(255,255,255,0.3); }
+        .btn-green { color: lime; } .btn-red { color: #ff5555; }
+        
+        button { font-family: inherit; }
+        .mode-btn { background: transparent; border: 1px solid gray; color: gray; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .mode-btn.active { background: lime; color: black; border-color: lime; }
+        .mode-btn.erhalt { background: cyan; color: black; border-color: cyan; }
+    </style>
+</head>
+<body>
+
+    <div id="notification-banner">WARNUNG PLATZHALTER</div>
+
+    <div class="nav-bar">
+        <button class="nav-btn active" onclick="switchView('home')">Home</button>
+        <button class="nav-btn" onclick="switchView('motors')">Motoren</button>
+        <button class="nav-btn" onclick="switchView('remote')">Brücken Remote</button>
+    </div>
+
+    <div id="home" class="view-container active">
+        <div class="glass-panel">
+            <h3>Ressourcen</h3>
+            <p>Tank: <span id="tank-val">0</span>/14</p>
+            <div class="progress-bg"><div id="tank-bar" class="progress-fill"></div></div>
+            <br>
+            <p>Batterie: <span id="batt-val">0</span>/15</p>
+            <div class="progress-bg"><div id="batt-bar" class="progress-fill"></div></div>
+        </div>
+    </div>
+
+    <div id="motors" class="view-container">
+        <div class="glass-panel">
+            <h3>Hauptdiesel: <span id="main-state" style="color: gray;">OFFLINE</span></h3>
+            <button class="mode-btn" id="m-aus" onclick="sendEngineCmd('AUS', null, null)">AUS</button>
+            <button class="mode-btn" id="m-auto" onclick="sendEngineCmd('AUTO', null, null)">AUTO</button>
+            <button class="mode-btn" id="m-an" onclick="sendEngineCmd('AN', null, null)">AN</button>
+        </div>
+        <div class="glass-panel">
+            <h3>Hilfsdiesel: <span id="aux-state" style="color: gray;">OFFLINE</span></h3>
+            <button class="mode-btn" id="a-aus" onclick="sendEngineCmd(null, 'AUS', null)">AUS</button>
+            <button class="mode-btn" id="a-auto" onclick="sendEngineCmd(null, 'AUTO', null)">AUTO</button>
+            <button class="mode-btn" id="a-an" onclick="sendEngineCmd(null, 'AN', null)">AN</button>
+        </div>
+        <div class="glass-panel">
+            <h3>Erhaltungsmodus</h3>
+            <button class="mode-btn" id="e-tog" onclick="toggleErhalt()">INAKTIV (Tippen für Toggle)</button>
+        </div>
+        <div class="glass-panel">
+            <h3>Tankklappe: <span id="hatch-state">ZU</span></h3>
+            <button class="nav-btn" style="width: 100%;" onclick="sendHatchToggle()">KLAPPE UMSCHALTEN</button>
+        </div>
+    </div>
+
+    <div id="remote" class="view-container">
+        <div class="glass-panel">
+            <h3 style="text-align:center;">Brücken Steuerung</h3>
+            <div class="d-pad">
+                <div class="pad-btn btn-red" onclick="sendRemote('BACK')">BK</div>
+                <div class="pad-btn" onclick="sendRemote('UP')">▲</div>
+                <div class="pad-btn btn-green" onclick="switchView('home')">HOME</div>
+                <div class="pad-btn" onclick="sendRemote('LEFT')">◄</div>
+                <div class="pad-btn btn-green" onclick="sendRemote('OK')">OK</div>
+                <div class="pad-btn" onclick="sendRemote('RIGHT')">►</div>
+                <div></div>
+                <div class="pad-btn" onclick="sendRemote('DOWN')">▼</div>
+                <div></div>
+            </div>
+            <p style="text-align:center; color:gray; font-size: 12px; margin-top: 20px;">Tastatur: Pfeile, Enter, Backspace, Q (Home)</p>
+        </div>
+    </div>
+
+    <script>
+        // HIER DEINE PIESOCKET URL EINTRAGEN!
+        const WS_URL = "wss://free.blr2.piesocket.com/v3/1?api_key=DEIN_API_KEY&notify_self=1";
+        let ws;
+        
+        let currentState = { mainMode: "AUS", auxMode: "AUS", erhalt: false };
+
+        function connectWS() {
+            ws = new WebSocket(WS_URL);
+            ws.onopen = () => console.log("WebRemote Verbunden!");
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleData(data);
+                } catch(e) {}
+            };
+            ws.onclose = () => setTimeout(connectWS, 2000); // Auto-Reconnect
+        }
+
+        function handleData(data) {
+            if(data.type === "TELEMETRY") {
+                currentState.mainMode = data.mainMode; currentState.auxMode = data.auxMode; currentState.erhalt = data.erhalt;
+                
+                // Progress Bars
+                document.getElementById('tank-val').innerText = data.fuel;
+                let tankPct = Math.min(100, (data.fuel / 14) * 100);
+                let tBar = document.getElementById('tank-bar');
+                tBar.style.width = (data.fuel >= 15 ? 100 : tankPct) + '%';
+                tBar.className = 'progress-fill ' + (data.fuel >= 14 ? 'red' : 'green');
+                
+                document.getElementById('batt-val').innerText = data.batt;
+                let bBar = document.getElementById('batt-bar');
+                bBar.style.width = (data.batt / 15) * 100 + '%';
+                bBar.className = 'progress-fill ' + (data.batt <= 4 ? 'red' : (data.batt <= 10 ? 'orange' : 'green'));
+
+                // Motor States (Farben)
+                const colMap = {"RUNNING": "lime", "STOPPED": "#ff5555", "STARTING": "orange", "STOPPING": "orange"};
+                document.getElementById('main-state').innerText = data.mainState;
+                document.getElementById('main-state').style.color = colMap[data.mainState] || "white";
+                document.getElementById('aux-state').innerText = data.auxState;
+                document.getElementById('aux-state').style.color = colMap[data.auxState] || "white";
+
+                // Buttons UI
+                document.querySelectorAll('#motors .mode-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('m-' + data.mainMode.toLowerCase()).classList.add('active');
+                document.getElementById('a-' + data.auxMode.toLowerCase()).classList.add('active');
+                
+                let eBtn = document.getElementById('e-tog');
+                if(data.erhalt) { eBtn.classList.add('erhalt'); eBtn.innerText = "AKTIV (Motoren simuliert auf AUTO)"; }
+                else { eBtn.classList.remove('erhalt'); eBtn.innerText = "INAKTIV (Tippen für Toggle)"; }
+            }
+            else if(data.type === "HATCH_STATUS") {
+                document.getElementById('hatch-state').innerText = data.state ? "AUF" : "ZU";
+                document.getElementById('hatch-state').style.color = data.state ? "lime" : "#ff5555";
+            }
+            else if(data.type === "ERROR" || data.type === "WARNUNG") {
+                showBanner(data.msg);
+            }
+        }
+
+        function showBanner(msg) {
+            const b = document.getElementById('notification-banner');
+            b.innerText = msg; b.style.top = '20px';
+            setTimeout(() => { b.style.top = '-100px'; }, 5000);
+            if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        }
+
+        function sendMsg(obj) { if(ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+        
+        function sendEngineCmd(m, a, e) {
+            sendMsg({ type: "ENGINE_CMD", 
+                      main: m !== null ? m : currentState.mainMode, 
+                      aux: a !== null ? a : currentState.auxMode, 
+                      erhalt: e !== null ? e : currentState.erhalt });
+        }
+        function toggleErhalt() { sendEngineCmd(null, null, !currentState.erhalt); }
+        function sendHatchToggle() { sendMsg({ type: "HATCH_CMD", cmd: "TOGGLE" }); }
+        function sendRemote(cmd) { sendMsg({ type: "BRIDGE_REMOTE", cmd: cmd }); }
+
+        function switchView(id) {
+            document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Tastatur Steuerung (D-Pad)
+        document.addEventListener('keydown', (e) => {
+            if(document.getElementById('remote').classList.contains('active')) {
+                if(e.key === 'ArrowUp') sendRemote('UP');
+                if(e.key === 'ArrowDown') sendRemote('DOWN');
+                if(e.key === 'ArrowLeft') sendRemote('LEFT');
+                if(e.key === 'ArrowRight') sendRemote('RIGHT');
+                if(e.key === 'Enter') sendRemote('OK');
+                if(e.key === 'Backspace') sendRemote('BACK');
+                if(e.key.toLowerCase() === 'q') switchView('home');
+            }
+        });
+
+        connectWS();
+    </script>
+</body>
+</html>
