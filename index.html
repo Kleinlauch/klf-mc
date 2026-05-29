@@ -9,8 +9,7 @@
     <style>
         :root { --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.2); }
         body { 
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
-            color: white; font-family: -apple-system, sans-serif; 
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: white; font-family: -apple-system, sans-serif; 
             margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
         #notification-banner {
@@ -19,44 +18,33 @@
             font-weight: bold; transition: top 0.5s ease; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
         .nav-bar { display: flex; overflow-x: auto; padding: 15px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); }
-        .nav-btn {
-            background: var(--glass-bg); border: 1px solid var(--glass-border); color: white;
-            padding: 10px 20px; border-radius: 20px; margin-right: 10px; cursor: pointer; white-space: nowrap;
-        }
+        .nav-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; padding: 10px 20px; border-radius: 20px; margin-right: 10px; cursor: pointer; white-space: nowrap; }
         .nav-btn.active { background: rgba(255, 165, 0, 0.8); color: black; font-weight: bold; }
         
         .view-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: none; padding-bottom: 50px; }
         .view-container.active { display: block; }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3); }
         
-        .glass-panel {
-            background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3);
-        }
-        
-        /* Progress Bars */
         .progress-bg { background: rgba(255,255,255,0.1); height: 20px; border-radius: 10px; overflow: hidden; margin-top: 5px; }
         .progress-fill { height: 100%; background: #00ff00; width: 0%; transition: width 0.3s; }
-        .progress-fill.red { background: #ff3333; }
-        .progress-fill.orange { background: #ffa500; }
+        .progress-fill.red { background: #ff3333; } .progress-fill.orange { background: #ffa500; }
         
         button { font-family: inherit; }
-        .mode-btn { background: rgba(255,255,255,0.1); border: 1px solid gray; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin: 2px; }
+        .mode-btn { background: rgba(255,255,255,0.1); border: 1px solid gray; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; margin: 3px; font-size: 14px; }
         .mode-btn.active { background: lime; color: black; border-color: lime; font-weight: bold; }
+        .mode-btn.erhalt-active { background: cyan; color: black; border-color: cyan; font-weight: bold; }
         
-        /* D-Pad */
         .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
         .pad-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 15px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; color: white; }
         .pad-btn:active { background: rgba(255,255,255,0.3); }
 
-        /* Grid für Lichter */
         .light-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .light-btn { background: rgba(255,255,255,0.1); border: 1px solid gray; padding: 15px; border-radius: 10px; color: white; cursor: pointer; text-align: center; font-size: 14px;}
+        .light-btn { background: rgba(255,255,255,0.1); border: 1px solid gray; padding: 15px; border-radius: 10px; color: white; cursor: pointer; text-align: center; font-size: 14px; transition: background 0.2s;}
         .light-btn.on { background: rgba(0, 255, 0, 0.4); border-color: lime; }
 
-        /* Türen Liste */
         .door-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--glass-border); }
         .door-controls { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto;}
-        .door-btn { padding: 8px; border-radius: 5px; border: none; cursor: pointer; color: white; background: rgba(255,255,255,0.2); white-space: nowrap;}
+        .door-btn { padding: 10px; border-radius: 5px; border: none; cursor: pointer; color: white; background: rgba(255,255,255,0.2); white-space: nowrap; flex: 1; min-width: 60px;}
     </style>
 </head>
 <body>
@@ -100,25 +88,26 @@
             <button class="mode-btn" id="a-an" onclick="sendEngineCmd(null, 'AN', null)">AN</button>
         </div>
         <div class="glass-panel">
+            <h3 style="margin-top:0;">Erhaltungssteuerung</h3>
+            <button class="mode-btn" id="e-tog" style="width: 100%; padding: 15px;" onclick="toggleErhalt()">LADE STATUS...</button>
+        </div>
+        <div class="glass-panel">
             <h3>Tankklappe: <span id="hatch-state">ZU</span></h3>
-            <button class="mode-btn" style="width: 100%;" onclick="sendMsg({type: 'HATCH_CMD', cmd: 'TOGGLE'})">UMSCHALTEN</button>
+            <button class="mode-btn" style="width: 100%; background:rgba(255,255,255,0.2)" onclick="sendMsg({type: 'HATCH_CMD', cmd: 'TOGGLE'})">KLAPPE UMSCHALTEN</button>
         </div>
     </div>
 
     <div id="lights" class="view-container">
         <div class="glass-panel">
             <h3 style="margin-top:0;">Beleuchtung</h3>
-            <div class="light-grid" id="light-container">
-                </div>
+            <div class="light-grid" id="light-container"></div>
         </div>
     </div>
 
     <div id="doors" class="view-container">
         <div class="glass-panel">
             <h3 style="margin-top:0;">Zugangskontrolle</h3>
-            <div id="door-container">
-                <p>Warte auf Netzwerk-Scan...</p>
-            </div>
+            <div id="door-container"><p>Warte auf Netzwerk-Scan...</p></div>
         </div>
     </div>
 
@@ -136,11 +125,12 @@
                 <div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'DOWN'})">▼</div>
                 <div></div>
             </div>
+            <p style="text-align:center; color:gray; font-size: 12px; margin-top: 15px;">PC: Pfeile, Enter, Backspace, Q</p>
         </div>
     </div>
 
     <script>
-        // HIER DEINE PIESOCKET URL EINTRAGEN:
+        // === DEINE PIESOCKET URL HIER ===
         const WS_URL = "wss://free.blr2.piesocket.com/v3/1?api_key=V0c69JMYbOjQRrluNWMYgxH0vCTWx8vFZUXcCcgo&notify_self=1";
         let ws;
         let currentState = { mainMode: "AUS", auxMode: "AUS", erhalt: false };
@@ -160,9 +150,7 @@
                 document.getElementById('conn-status').innerText = "Online & Synchronisiert";
                 document.getElementById('conn-status').style.color = "lime";
             };
-            ws.onmessage = (event) => {
-                try { handleData(JSON.parse(event.data)); } catch(e) {}
-            };
+            ws.onmessage = (event) => { try { handleData(JSON.parse(event.data)); } catch(e) {} };
             ws.onclose = () => {
                 document.getElementById('conn-status').innerText = "Verbindung getrennt. Reconnect...";
                 document.getElementById('conn-status').style.color = "red";
@@ -172,7 +160,7 @@
 
         function handleData(data) {
             if(data.type === "TELEMETRY") {
-                currentState.mainMode = data.mainMode; currentState.auxMode = data.auxMode;
+                currentState.mainMode = data.mainMode; currentState.auxMode = data.auxMode; currentState.erhalt = data.erhalt;
                 
                 document.getElementById('tank-val').innerText = data.fuel;
                 document.getElementById('tank-bar').style.width = Math.min(100, (data.fuel / 14) * 100) + '%';
@@ -185,48 +173,59 @@
                 document.getElementById('aux-state').innerText = data.auxState;
                 document.getElementById('aux-state').style.color = colMap[data.auxState] || "white";
 
-                document.querySelectorAll('#motors .mode-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('#motors .mode-btn').forEach(b => { b.classList.remove('active'); b.classList.remove('erhalt-active'); });
                 if(document.getElementById('m-' + data.mainMode.toLowerCase())) document.getElementById('m-' + data.mainMode.toLowerCase()).classList.add('active');
                 if(document.getElementById('a-' + data.auxMode.toLowerCase())) document.getElementById('a-' + data.auxMode.toLowerCase()).classList.add('active');
+                
+                let eBtn = document.getElementById('e-tog');
+                if(data.erhalt) { eBtn.classList.add('erhalt-active'); eBtn.innerText = "AKTIV (Motoren simuliert auf AUTO)"; }
+                else { eBtn.innerText = "INAKTIV (Tippen für Toggle)"; }
             }
             else if(data.type === "HATCH_STATUS") {
                 document.getElementById('hatch-state').innerText = data.state ? "AUF" : "ZU";
                 document.getElementById('hatch-state').style.color = data.state ? "lime" : "#ff5555";
             }
             else if(data.type === "WEB_SYNC") {
-                // Lichter Updaten
+                // SMART DOM UPDATE Lichter (Kein Einfrieren mehr!)
                 const lCont = document.getElementById('light-container');
-                lCont.innerHTML = "";
                 for(const [key, val] of Object.entries(data.lights)) {
-                    let btn = document.createElement('div');
+                    let btn = document.getElementById('lbtn-' + key);
+                    if(!btn) {
+                        btn = document.createElement('button');
+                        btn.id = 'lbtn-' + key;
+                        btn.innerText = lightNames[key] || key;
+                        btn.onclick = () => sendMsg({type: "LIGHT_TOGGLE", light: key});
+                        lCont.appendChild(btn);
+                    }
                     btn.className = "light-btn " + (val === 15 ? "on" : "");
-                    btn.innerText = lightNames[key] || key;
-                    btn.onclick = () => sendMsg({type: "LIGHT_TOGGLE", light: key});
-                    lCont.appendChild(btn);
                 }
                 
-                // Türen Updaten
+                // SMART DOM UPDATE Türen
                 const dCont = document.getElementById('door-container');
-                if(Object.keys(data.doors).length === 0) { dCont.innerHTML = "<p>Keine Türen erkannt.</p>"; return; }
-                dCont.innerHTML = "";
+                if(Object.keys(data.doors).length > 0 && dCont.innerHTML.includes("Warte")) dCont.innerHTML = "";
                 for(const [name, state] of Object.entries(data.doors)) {
-                    let div = document.createElement('div'); div.className = "door-item";
-                    let title = document.createElement('div'); 
-                    title.innerHTML = `<strong>${name}</strong> [${state.state}] <span style="color:red">${state.locked ? 'VERRIEGELT' : ''}</span>`;
-                    
-                    let ctrl = document.createElement('div'); ctrl.className = "door-controls";
-                    ctrl.innerHTML = `
-                        <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'OPEN_PERM'})">AUF</button>
-                        <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'CLOSE'})">ZU</button>
-                        <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'OPEN_TEMP'})">8s AUF</button>
-                        <button class="door-btn" style="background:rgba(255,0,0,0.3)" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'${state.locked ? 'UNLOCK' : 'LOCK'}'})">${state.locked ? 'ENTRIEGELN' : 'VERRIEGELN'}</button>
-                    `;
-                    div.appendChild(title); div.appendChild(ctrl); dCont.appendChild(div);
+                    let safeId = 'door-' + name.replace(/\s+/g, '');
+                    let dEl = document.getElementById(safeId);
+                    if(!dEl) {
+                        dEl = document.createElement('div'); dEl.id = safeId; dEl.className = "door-item";
+                        dEl.innerHTML = `
+                            <div class="door-title"></div>
+                            <div class="door-controls">
+                                <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'OPEN_PERM'})">AUF</button>
+                                <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'CLOSE'})">ZU</button>
+                                <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'OPEN_TEMP'})">8s</button>
+                                <button class="door-btn lock-btn"></button>
+                            </div>`;
+                        dCont.appendChild(dEl);
+                    }
+                    dEl.querySelector('.door-title').innerHTML = `<strong>${name}</strong> [${state.state}] <span style="color:red">${state.locked ? 'VERRIEGELT' : ''}</span>`;
+                    let lBtn = dEl.querySelector('.lock-btn');
+                    lBtn.style.background = state.locked ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)";
+                    lBtn.innerText = state.locked ? "ENTRIEGELN" : "VERRIEGELN";
+                    lBtn.onclick = () => sendMsg({type:'DOOR_CTRL', target:name, cmd: state.locked ? 'UNLOCK' : 'LOCK'});
                 }
             }
-            else if(data.type === "ERROR") {
-                showBanner(data.msg);
-            }
+            else if(data.type === "ERROR") { showBanner(data.msg); }
         }
 
         function showBanner(msg) {
@@ -238,12 +237,8 @@
 
         function sendMsg(obj) { if(ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
         
-        function sendEngineCmd(m, a, e) {
-            sendMsg({ type: "ENGINE_CMD", 
-                      main: m !== null ? m : currentState.mainMode, 
-                      aux: a !== null ? a : currentState.auxMode, 
-                      erhalt: e !== null ? e : currentState.erhalt });
-        }
+        function sendEngineCmd(m, a, e) { sendMsg({ type: "ENGINE_CMD", main: m !== null ? m : currentState.mainMode, aux: a !== null ? a : currentState.auxMode, erhalt: e !== null ? e : currentState.erhalt }); }
+        function toggleErhalt() { sendEngineCmd(null, null, !currentState.erhalt); }
 
         function switchView(id) {
             document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
@@ -259,7 +254,6 @@
                 if(e.key.toLowerCase() === 'q') switchView('home');
             }
         });
-
         connectWS();
     </script>
 </body>
