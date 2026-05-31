@@ -7,36 +7,58 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
-        :root { --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.2); }
-        body { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        #notification-banner { position: fixed; top: -100px; left: 5%; width: 90%; background: rgba(255, 50, 50, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; transition: top 0.5s ease; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        #offline-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
-        .nav-bar { display: flex; overflow-x: auto; padding: 15px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); }
-        .nav-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; padding: 10px 20px; border-radius: 20px; margin-right: 10px; cursor: pointer; white-space: nowrap; }
-        .nav-btn.active { background: rgba(255, 165, 0, 0.8); color: black; font-weight: bold; }
-        .view-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: none; padding-bottom: 50px; }
-        .view-container.active { display: block; }
-        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3); }
-        .progress-bg { background: rgba(255,255,255,0.1); height: 20px; border-radius: 10px; overflow: hidden; margin-top: 5px; }
-        .progress-fill { height: 100%; background: #00ff00; width: 0%; transition: width 0.3s; }
-        .progress-fill.red { background: #ff3333; } .progress-fill.orange { background: #ffa500; }
+        :root { --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.2); --accent: lime; }
+        body { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 1s ease; }
+        
+        /* ORGANIC ANIMATIONS */
+        @keyframes pulseGlow { 0% { box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3); } 50% { box-shadow: 0 8px 32px 0 rgba(0, 255, 0, 0.1); } 100% { box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #notification-banner { position: fixed; top: -100px; left: 5%; width: 90%; background: rgba(255, 50, 50, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        #offline-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; animation: slideIn 0.5s forwards; }
+        
+        .nav-bar { display: flex; overflow-x: auto; padding: 15px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border); }
+        .nav-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; padding: 12px 22px; border-radius: 25px; margin-right: 10px; cursor: pointer; white-space: nowrap; transition: all 0.3s ease; }
+        .nav-btn.active { background: rgba(255, 165, 0, 0.8); color: black; font-weight: bold; transform: scale(1.05); box-shadow: 0 0 15px rgba(255, 165, 0, 0.4); }
+        
+        .view-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: none; padding-bottom: 80px; }
+        .view-container.active { display: block; animation: slideIn 0.4s ease-out; }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; margin-bottom: 15px; animation: pulseGlow 6s infinite; transition: transform 0.2s ease; }
+        
+        .progress-bg { background: rgba(255,255,255,0.05); height: 22px; border-radius: 11px; overflow: hidden; margin-top: 5px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); border: 1px solid var(--glass-border);}
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #00ff00, #00cc00); width: 0%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        
         button { font-family: inherit; }
-        .mode-btn { background: rgba(255,255,255,0.1); border: 1px solid gray; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; margin: 3px; font-size: 14px; }
-        .mode-btn.active { background: lime; color: black; border-color: lime; font-weight: bold; }
-        .mode-btn.erhalt-active { background: cyan; color: black; border-color: cyan; font-weight: bold; }
+        .mode-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 12px 15px; border-radius: 12px; cursor: pointer; margin: 3px; font-size: 14px; transition: all 0.3s ease; }
+        .mode-btn:active { transform: scale(0.95); }
+        .mode-btn.active { background: lime; color: black; border-color: lime; font-weight: bold; box-shadow: 0 0 10px lime; }
+        .mode-btn.stop-btn { background: #ff3333; color: white; border-color: red; font-weight: bold; box-shadow: 0 0 15px red; animation: pulseGlow 1s infinite; }
+        
+        /* D-Pad, Lichter, Tueren identisch wie zuvor... */
         .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
-        .pad-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 15px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; color: white; }
-        .pad-btn:active { background: rgba(255,255,255,0.3); }
+        .pad-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 20px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; color: white; transition: all 0.2s; }
+        .pad-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
         .light-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .light-btn { background: rgba(255,255,255,0.1); border: 1px solid gray; padding: 15px; border-radius: 10px; color: white; cursor: pointer; text-align: center; font-size: 14px; transition: background 0.2s;}
-        .light-btn.on { background: rgba(0, 255, 0, 0.4); border-color: lime; }
-        .door-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--glass-border); }
+        .light-btn { background: rgba(255,255,255,0.1); border: 1px solid gray; padding: 15px; border-radius: 15px; color: white; cursor: pointer; text-align: center; font-size: 14px; transition: all 0.3s ease;}
+        .light-btn.on { background: rgba(0, 255, 0, 0.3); border-color: lime; box-shadow: 0 0 15px rgba(0,255,0,0.2); text-shadow: 0 0 5px lime; }
+        .door-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid var(--glass-border); }
         .door-controls { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto;}
-        .door-btn { padding: 10px; border-radius: 5px; border: none; cursor: pointer; color: white; background: rgba(255,255,255,0.2); white-space: nowrap; flex: 1; min-width: 60px;}
-        select, input { background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--glass-border); padding: 10px; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 15px; box-sizing: border-box;}
+        .door-btn { padding: 10px; border-radius: 8px; border: none; cursor: pointer; color: white; background: rgba(255,255,255,0.2); white-space: nowrap; flex: 1; min-width: 60px; transition: background 0.2s;}
+        select, input { background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; font-size: 16px; width: 100%; margin-bottom: 15px; box-sizing: border-box;}
+        
+        /* SIMPLE MODE TOGGLE */
+        #simple-toggle { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); border: 1px solid gray; border-radius: 50%; width: 50px; height: 50px; color: white; font-size: 20px; z-index: 1000; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(5px); }
+        
+        /* SIMPLE MODE CSS OVERRIDES */
+        body.simple-mode { background: #1a1a1a; }
+        body.simple-mode .glass-panel { background: #2a2a2a; backdrop-filter: none; box-shadow: none; border: 1px solid #444; animation: none; transform: none; }
+        body.simple-mode .nav-bar { background: #111; backdrop-filter: none; }
+        body.simple-mode * { transition: none !important; animation: none !important; box-shadow: none !important; }
     </style>
 </head>
 <body>
+
+    <div id="simple-toggle" onclick="document.body.classList.toggle('simple-mode')">⚡</div>
 
     <div id="offline-popup">
         <h1 style="color: #ff5555;">GATEWAY OFFLINE</h1>
@@ -70,7 +92,7 @@
         </div>
         <div class="glass-panel">
             <h3 style="margin-top:0;">Netzwerk</h3>
-            <p id="conn-status" style="color: orange;">Verbinde mit Gateway...</p>
+            <p id="conn-status" style="color: orange; font-weight: bold;">Verbinde mit Gateway...</p>
         </div>
     </div>
 
@@ -91,89 +113,33 @@
             <h3 style="margin-top:0;">Erhaltungssteuerung</h3>
             <button class="mode-btn" id="e-tog" style="width: 100%; padding: 15px;" onclick="toggleErhalt()">LADE STATUS...</button>
         </div>
-        <div class="glass-panel">
-            <h3>Tankklappe: <span id="hatch-state">ZU</span></h3>
-            <button class="mode-btn" style="width: 100%; background:rgba(255,255,255,0.2)" onclick="sendMsg({type: 'HATCH_CMD', cmd: 'TOGGLE'})">KLAPPE UMSCHALTEN</button>
-        </div>
     </div>
 
     <div id="lights" class="view-container"><div class="glass-panel"><h3 style="margin-top:0;">Beleuchtung</h3><div class="light-grid" id="light-container"></div></div></div>
-    <div id="doors" class="view-container"><div class="glass-panel"><h3 style="margin-top:0;">Zugangskontrolle</h3><div id="door-container"><p>Warte auf Netzwerk-Scan...</p></div></div></div>
-    
-    <div id="rooms" class="view-container">
-        <div class="glass-panel">
-            <h3 style="margin-top:0;">Zimmer Steuerung</h3>
-            <select id="room-select">
-                <option value="ALL">Alle Zimmer</option><option value="Zimmer 1">Zimmer 1</option><option value="Zimmer 2">Zimmer 2</option><option value="Zimmer 3">Zimmer 3</option><option value="Luxus Suite">Luxus Suite</option>
-            </select>
-            <button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('LIGHT_CONTROL', 'ON')">Licht AN</button>
-            <button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('LIGHT_CONTROL', 'OFF')">Licht AUS</button>
-            <button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('DOOR_CONTROL', 'OPEN')">Tür AUF</button>
-            <button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('SYSTEM', 'RESET')">Display RESET</button>
-            <button class="mode-btn" style="width: 100%; margin-bottom: 5px; background:rgba(255,0,0,0.3)" onclick="sendRoomCmd('SYSTEM', 'ELECTRONICS_OFF')">Electronics OFF</button>
-        </div>
-    </div>
-
-    <div id="remote" class="view-container">
-        <div class="glass-panel">
-            <h3 style="text-align:center; margin-top:0;">Brücken D-Pad</h3>
-            <div class="d-pad">
-                <div class="pad-btn" style="color:#ff5555" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'BACK'})">BK</div>
-                <div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'UP'})">▲</div>
-                <div class="pad-btn" style="color:lime" onclick="switchView('home')">HOME</div>
-                <div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'LEFT'})">◄</div>
-                <div class="pad-btn" style="color:lime" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'OK'})">OK</div>
-                <div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'RIGHT'})">►</div>
-                <div></div><div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'DOWN'})">▼</div><div></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="gateway" class="view-container">
-        <div class="glass-panel" style="text-align: center;">
-            <h3 style="margin-top:0; color: #ff5555;">Server Aktionen</h3>
-            <button class="mode-btn" style="width: 100%; background:rgba(255,165,0,0.3); margin-bottom: 10px;" onclick="sendMsg({type: 'GATEWAY_CTRL', cmd: 'STOP'})">Empfang Stoppen</button>
-            <button class="mode-btn" style="width: 100%; background:rgba(255,0,0,0.4);" onclick="if(confirm('Bist du sicher? Gateway Server faehrt physisch herunter!')) sendMsg({type: 'GATEWAY_CTRL', cmd: 'SHUTDOWN'})">SERVER HERUNTERFAHREN</button>
-        </div>
-        <div class="glass-panel">
-            <h3 style="margin-top:0;">Licht Registrieren</h3>
-            <input type="text" id="cfg-l-id" placeholder="ID (z.B. LICHT_NEU)">
-            <input type="text" id="cfg-l-name" placeholder="Anzeigename (z.B. Küche)">
-            <button class="mode-btn" style="width:100%" onclick="updateConfig('ADD_LIGHT', 'cfg-l-id', 'cfg-l-name')">Hinzufügen</button>
-        </div>
-        <div class="glass-panel">
-            <h3 style="margin-top:0;">Tür Registrieren</h3>
-            <input type="text" id="cfg-d-id" placeholder="ID (z.B. TuerKueche)">
-            <input type="text" id="cfg-d-name" placeholder="Anzeigename (z.B. Küche)">
-            <button class="mode-btn" style="width:100%" onclick="updateConfig('ADD_DOOR', 'cfg-d-id', 'cfg-d-name')">Hinzufügen</button>
-        </div>
-    </div>
+    <div id="doors" class="view-container"><div class="glass-panel"><h3 style="margin-top:0;">Zugangskontrolle</h3><div id="door-container"><p>Warte auf Scan...</p></div></div></div>
+    <div id="rooms" class="view-container"><div class="glass-panel"><h3 style="margin-top:0;">Zimmer Steuerung</h3><select id="room-select"><option value="ALL">Alle Zimmer</option><option value="Zimmer 1">Zimmer 1</option><option value="Luxus Suite">Luxus Suite</option></select>
+        <button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('LIGHT_CONTROL', 'ON')">Licht AN</button><button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('LIGHT_CONTROL', 'OFF')">Licht AUS</button><button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('DOOR_CONTROL', 'OPEN')">Tür AUF</button>
+        <button class="mode-btn" style="width: 100%; margin-bottom: 5px; background:rgba(255,0,0,0.3)" onclick="sendRoomCmd('SYSTEM', 'ELECTRONICS_OFF')">Electronics OFF</button></div></div>
+    <div id="remote" class="view-container"><div class="glass-panel"><h3 style="text-align:center; margin-top:0;">D-Pad</h3><div class="d-pad"><div class="pad-btn" style="color:#ff5555" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'BACK'})">BK</div><div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'UP'})">▲</div><div class="pad-btn" style="color:lime" onclick="switchView('home')">HOME</div><div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'LEFT'})">◄</div><div class="pad-btn" style="color:lime" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'OK'})">OK</div><div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'RIGHT'})">►</div><div></div><div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'DOWN'})">▼</div><div></div></div></div></div>
+    <div id="gateway" class="view-container"><div class="glass-panel" style="text-align: center;"><h3 style="margin-top:0; color: #ff5555;">Server Aktionen</h3><button class="mode-btn" style="width: 100%; background:rgba(255,165,0,0.3); margin-bottom: 10px;" onclick="sendMsg({type: 'GATEWAY_CTRL', cmd: 'STOP'})">Empfang Stoppen</button><button class="mode-btn" style="width: 100%; background:rgba(255,0,0,0.4);" onclick="if(confirm('Server faehrt herunter!')) sendMsg({type: 'GATEWAY_CTRL', cmd: 'SHUTDOWN'})">SERVER HERUNTERFAHREN</button></div></div>
 
     <script>
-        // === PIESOCKET URL HIER ===
         const WS_URL = "wss://free.blr2.piesocket.com/v3/1?api_key=V0c69JMYbOjQRrluNWMYgxH0vCTWx8vFZUXcCcgo&notify_self=1";
         let ws;
         let currentState = { mainMode: "AUS", auxMode: "AUS", erhalt: false };
         let lastPing = Date.now();
 
-        // Offline Detector
         setInterval(() => {
-            if (Date.now() - lastPing > 12000) {
-                document.getElementById('offline-popup').style.display = "flex";
-            } else {
-                document.getElementById('offline-popup').style.display = "none";
-            }
+            if (Date.now() - lastPing > 12000) { document.getElementById('offline-popup').style.display = "flex"; } 
+            else { document.getElementById('offline-popup').style.display = "none"; }
         }, 2000);
 
         function connectWS() {
             document.getElementById('conn-status').innerText = "Verbinde..."; document.getElementById('conn-status').style.color = "orange";
             ws = new WebSocket(WS_URL);
             ws.onopen = () => { 
-                document.getElementById('conn-status').innerText = "Online & Synchronisiert"; 
-                document.getElementById('conn-status').style.color = "lime"; 
-                lastPing = Date.now(); 
-                // FRAGT EINMALIG NACH DEM FULL SYNC!
-                sendMsg({type: "REQUEST_SYNC"});
+                document.getElementById('conn-status').innerText = "Online & Synchronisiert"; document.getElementById('conn-status').style.color = "lime"; 
+                lastPing = Date.now(); sendMsg({type: "REQUEST_SYNC"}); // Holt sofort alle Daten!
             };
             ws.onmessage = (event) => { try { handleData(JSON.parse(event.data)); } catch(e) {} };
             ws.onclose = () => { document.getElementById('conn-status').innerText = "Verbindung getrennt. Reconnect..."; document.getElementById('conn-status').style.color = "red"; setTimeout(connectWS, 3000); };
@@ -181,7 +147,6 @@
 
         function handleData(data) {
             lastPing = Date.now(); 
-            
             if(data.type === "TELEMETRY") {
                 currentState.mainMode = data.mainMode; currentState.auxMode = data.auxMode; currentState.erhalt = data.erhalt;
                 document.getElementById('tank-val').innerText = data.fuel; document.getElementById('tank-bar').style.width = Math.min(100, (data.fuel / 14) * 100) + '%';
@@ -192,8 +157,15 @@
                 document.getElementById('aux-state').innerText = data.auxState; document.getElementById('aux-state').style.color = colMap[data.auxState] || "white";
 
                 document.querySelectorAll('#motors .mode-btn').forEach(b => { b.classList.remove('active'); b.classList.remove('erhalt-active'); });
-                if(document.getElementById('m-' + data.mainMode.toLowerCase())) document.getElementById('m-' + data.mainMode.toLowerCase()).classList.add('active');
-                if(document.getElementById('a-' + data.auxMode.toLowerCase())) document.getElementById('a-' + data.auxMode.toLowerCase()).classList.add('active');
+                
+                // STOP BUTTON LOGIK (Aendert AUS zu STOP in Rot, wenn der Motor startet)
+                let mAus = document.getElementById('m-aus');
+                if(data.mainState === "STARTING") { mAus.innerText = "STOP"; mAus.className = "mode-btn stop-btn"; } else { mAus.innerText = "AUS"; mAus.className = "mode-btn"; if(data.mainMode==="AUS") mAus.classList.add("active"); }
+                if(document.getElementById('m-' + data.mainMode.toLowerCase()) && data.mainState !== "STARTING") document.getElementById('m-' + data.mainMode.toLowerCase()).classList.add('active');
+
+                let aAus = document.getElementById('a-aus');
+                if(data.auxState === "STARTING") { aAus.innerText = "STOP"; aAus.className = "mode-btn stop-btn"; } else { aAus.innerText = "AUS"; aAus.className = "mode-btn"; if(data.auxMode==="AUS") aAus.classList.add("active"); }
+                if(document.getElementById('a-' + data.auxMode.toLowerCase()) && data.auxState !== "STARTING") document.getElementById('a-' + data.auxMode.toLowerCase()).classList.add('active');
                 
                 let eBtn = document.getElementById('e-tog');
                 if(data.erhalt) { eBtn.classList.add('erhalt-active'); eBtn.innerText = "AKTIV"; } else { eBtn.innerText = "INAKTIV"; }
@@ -204,84 +176,23 @@
                     pBtn.style.background = data.pwrOut ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)"; pBtn.style.borderColor = data.pwrOut ? "lime" : "red";
                 }
             }
-            else if(data.type === "HATCH_STATUS") {
-                document.getElementById('hatch-state').innerText = data.state ? "AUF" : "ZU"; document.getElementById('hatch-state').style.color = data.state ? "lime" : "#ff5555";
-            }
             else if(data.type === "WEB_SYNC") {
                 const lCont = document.getElementById('light-container');
                 for(const [key, name] of Object.entries(data.config.lights)) {
                     let btn = document.getElementById('lbtn-' + key);
-                    if(!btn) {
-                        btn = document.createElement('button'); btn.id = 'lbtn-' + key; btn.innerText = name;
-                        btn.onclick = () => sendMsg({type: "LIGHT_TOGGLE", light: key}); lCont.appendChild(btn);
-                    }
-                    let stateVal = data.lights[key] || 0;
-                    btn.className = "light-btn " + (stateVal === 15 ? "on" : "");
-                }
-                
-                const dCont = document.getElementById('door-container');
-                if(Object.keys(data.doors).length > 0 && dCont.innerHTML.includes("Warte")) dCont.innerHTML = "";
-                for(const [name, state] of Object.entries(data.doors)) {
-                    let safeId = 'door-' + name.replace(/[^a-zA-Z0-9]/g, '');
-                    let dEl = document.getElementById(safeId);
-                    let alias = data.config.doors[name] || name; 
-                    
-                    if(!dEl) {
-                        dEl = document.createElement('div'); dEl.id = safeId; dEl.className = "door-item";
-                        dEl.innerHTML = `<div class="door-title"></div><div class="door-controls">
-                                <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'OPEN_PERM'})">AUF</button>
-                                <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'CLOSE'})">ZU</button>
-                                <button class="door-btn" onclick="sendMsg({type:'DOOR_CTRL', target:'${name}', cmd:'OPEN_TEMP'})">8s</button>
-                                <button class="door-btn lock-btn"></button></div>`;
-                        dCont.appendChild(dEl);
-                    }
-                    dEl.querySelector('.door-title').innerHTML = `<strong>${alias}</strong> [${state.state}] <span style="color:red">${state.locked ? 'VERRIEGELT' : ''}</span>`;
-                    let lBtn = dEl.querySelector('.lock-btn');
-                    lBtn.style.background = state.locked ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)";
-                    lBtn.innerText = state.locked ? "ENTRIEGELN" : "VERRIEGELN";
-                    lBtn.onclick = () => sendMsg({type:'DOOR_CTRL', target:name, cmd: state.locked ? 'UNLOCK' : 'LOCK'});
+                    if(!btn) { btn = document.createElement('button'); btn.id = 'lbtn-' + key; btn.innerText = name; btn.onclick = () => sendMsg({type: "LIGHT_TOGGLE", light: key}); lCont.appendChild(btn); }
+                    btn.className = "light-btn " + ((data.lights[key] || 0) === 15 ? "on" : "");
                 }
             }
             else if(data.type === "ERROR") { showBanner(data.msg); }
         }
 
-        function showBanner(msg) {
-            const b = document.getElementById('notification-banner'); b.innerText = msg; b.style.top = '20px';
-            setTimeout(() => { b.style.top = '-100px'; }, 5000); if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        }
-
+        function showBanner(msg) { const b = document.getElementById('notification-banner'); b.innerText = msg; b.style.top = '20px'; setTimeout(() => { b.style.top = '-100px'; }, 5000); if(navigator.vibrate) navigator.vibrate([200, 100, 200]); }
         function sendMsg(obj) { if(ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
         function sendEngineCmd(m, a, e) { sendMsg({ type: "ENGINE_CMD", main: m !== null ? m : currentState.mainMode, aux: a !== null ? a : currentState.auxMode, erhalt: e !== null ? e : currentState.erhalt }); }
         function toggleErhalt() { sendEngineCmd(null, null, !currentState.erhalt); }
-        function sendRoomCmd(type, command) {
-            let target = document.getElementById('room-select').value;
-            let payload = { type: type, command: command, target: target };
-            if (command === 'ELECTRONICS_OFF') payload.data = true;
-            sendMsg(payload);
-        }
-        function updateConfig(action, idField, nameField) {
-            let idVal = document.getElementById(idField).value;
-            let nameVal = document.getElementById(nameField).value;
-            if(idVal !== "") {
-                sendMsg({type: "GATEWAY_CONFIG", action: action, id: idVal, name: nameVal});
-                document.getElementById(idField).value = ""; document.getElementById(nameField).value = "";
-                alert("Erfolgreich an Gateway gesendet!");
-            }
-        }
-
-        function switchView(id) {
-            document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); event.target.classList.add('active');
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if(document.getElementById('remote').classList.contains('active')) {
-                const keyMap = {'ArrowUp':'UP', 'ArrowDown':'DOWN', 'ArrowLeft':'LEFT', 'ArrowRight':'RIGHT', 'Enter':'OK', 'Backspace':'BACK'};
-                if(keyMap[e.key]) sendMsg({type: "BRIDGE_REMOTE", cmd: keyMap[e.key]});
-                if(e.key.toLowerCase() === 'q') switchView('home');
-            }
-        });
+        function sendRoomCmd(type, command) { let target = document.getElementById('room-select').value; let payload = { type: type, command: command, target: target }; if (command === 'ELECTRONICS_OFF') payload.data = true; sendMsg(payload); }
+        function switchView(id) { document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); event.target.classList.add('active'); }
         connectWS();
     </script>
 </body>
