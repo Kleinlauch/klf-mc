@@ -10,6 +10,7 @@
         :root { --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.2); }
         body { background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         #notification-banner { position: fixed; top: -100px; left: 5%; width: 90%; background: rgba(255, 50, 50, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; text-align: center; font-weight: bold; transition: top 0.5s ease; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #offline-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
         .nav-bar { display: flex; overflow-x: auto; padding: 15px; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); }
         .nav-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; padding: 10px 20px; border-radius: 20px; margin-right: 10px; cursor: pointer; white-space: nowrap; }
         .nav-btn.active { background: rgba(255, 165, 0, 0.8); color: black; font-weight: bold; }
@@ -32,10 +33,16 @@
         .door-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--glass-border); }
         .door-controls { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto;}
         .door-btn { padding: 10px; border-radius: 5px; border: none; cursor: pointer; color: white; background: rgba(255,255,255,0.2); white-space: nowrap; flex: 1; min-width: 60px;}
-        select { background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--glass-border); padding: 10px; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 15px; }
+        select, input { background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--glass-border); padding: 10px; border-radius: 10px; font-size: 16px; width: 100%; margin-bottom: 15px; box-sizing: border-box;}
     </style>
 </head>
 <body>
+
+    <div id="offline-popup">
+        <h1 style="color: #ff5555;">GATEWAY OFFLINE</h1>
+        <p style="text-align: center; margin: 20px;">Die Verbindung zum Schiff wurde unterbrochen.<br>Computer offline oder Server gestoppt.</p>
+        <button class="mode-btn" onclick="location.reload()">Neu laden</button>
+    </div>
 
     <div id="notification-banner">WARNUNG</div>
 
@@ -46,6 +53,7 @@
         <button class="nav-btn" onclick="switchView('doors')">Türen</button>
         <button class="nav-btn" onclick="switchView('rooms')">Zimmer</button>
         <button class="nav-btn" onclick="switchView('remote')">Remote</button>
+        <button class="nav-btn" onclick="switchView('gateway')">Gateway</button>
     </div>
 
     <div id="home" class="view-container active">
@@ -61,7 +69,7 @@
             <div class="progress-bg"><div id="batt-bar" class="progress-fill"></div></div>
         </div>
         <div class="glass-panel">
-            <h3 style="margin-top:0;">System-Verbindung</h3>
+            <h3 style="margin-top:0;">Netzwerk</h3>
             <p id="conn-status" style="color: orange;">Verbinde mit Gateway...</p>
         </div>
     </div>
@@ -89,29 +97,14 @@
         </div>
     </div>
 
-    <div id="lights" class="view-container">
-        <div class="glass-panel">
-            <h3 style="margin-top:0;">Beleuchtung</h3>
-            <div class="light-grid" id="light-container"></div>
-        </div>
-    </div>
-
-    <div id="doors" class="view-container">
-        <div class="glass-panel">
-            <h3 style="margin-top:0;">Zugangskontrolle</h3>
-            <div id="door-container"><p>Warte auf Netzwerk-Scan...</p></div>
-        </div>
-    </div>
-
+    <div id="lights" class="view-container"><div class="glass-panel"><h3 style="margin-top:0;">Beleuchtung</h3><div class="light-grid" id="light-container"></div></div></div>
+    <div id="doors" class="view-container"><div class="glass-panel"><h3 style="margin-top:0;">Zugangskontrolle</h3><div id="door-container"><p>Warte auf Netzwerk-Scan...</p></div></div></div>
+    
     <div id="rooms" class="view-container">
         <div class="glass-panel">
             <h3 style="margin-top:0;">Zimmer Steuerung</h3>
             <select id="room-select">
-                <option value="ALL">Alle Zimmer</option>
-                <option value="Zimmer 1">Zimmer 1</option>
-                <option value="Zimmer 2">Zimmer 2</option>
-                <option value="Zimmer 3">Zimmer 3</option>
-                <option value="Luxus Suite">Luxus Suite</option>
+                <option value="ALL">Alle Zimmer</option><option value="Zimmer 1">Zimmer 1</option><option value="Zimmer 2">Zimmer 2</option><option value="Zimmer 3">Zimmer 3</option><option value="Luxus Suite">Luxus Suite</option>
             </select>
             <button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('LIGHT_CONTROL', 'ON')">Licht AN</button>
             <button class="mode-btn" style="width: 100%; margin-bottom: 5px;" onclick="sendRoomCmd('LIGHT_CONTROL', 'OFF')">Licht AUS</button>
@@ -131,10 +124,28 @@
                 <div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'LEFT'})">◄</div>
                 <div class="pad-btn" style="color:lime" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'OK'})">OK</div>
                 <div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'RIGHT'})">►</div>
-                <div></div>
-                <div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'DOWN'})">▼</div>
-                <div></div>
+                <div></div><div class="pad-btn" onclick="sendMsg({type: 'BRIDGE_REMOTE', cmd: 'DOWN'})">▼</div><div></div>
             </div>
+        </div>
+    </div>
+
+    <div id="gateway" class="view-container">
+        <div class="glass-panel" style="text-align: center;">
+            <h3 style="margin-top:0; color: #ff5555;">Server Aktionen</h3>
+            <button class="mode-btn" style="width: 100%; background:rgba(255,165,0,0.3); margin-bottom: 10px;" onclick="sendMsg({type: 'GATEWAY_CTRL', cmd: 'STOP'})">Empfang Stoppen</button>
+            <button class="mode-btn" style="width: 100%; background:rgba(255,0,0,0.4);" onclick="if(confirm('Bist du sicher? Gateway Server faehrt physisch herunter!')) sendMsg({type: 'GATEWAY_CTRL', cmd: 'SHUTDOWN'})">SERVER HERUNTERFAHREN</button>
+        </div>
+        <div class="glass-panel">
+            <h3 style="margin-top:0;">Licht Registrieren</h3>
+            <input type="text" id="cfg-l-id" placeholder="ID (z.B. LICHT_NEU)">
+            <input type="text" id="cfg-l-name" placeholder="Anzeigename (z.B. Küche)">
+            <button class="mode-btn" style="width:100%" onclick="updateConfig('ADD_LIGHT', 'cfg-l-id', 'cfg-l-name')">Hinzufügen</button>
+        </div>
+        <div class="glass-panel">
+            <h3 style="margin-top:0;">Tür Registrieren</h3>
+            <input type="text" id="cfg-d-id" placeholder="ID (z.B. TuerKueche)">
+            <input type="text" id="cfg-d-name" placeholder="Anzeigename (z.B. Küche)">
+            <button class="mode-btn" style="width:100%" onclick="updateConfig('ADD_DOOR', 'cfg-d-id', 'cfg-d-name')">Hinzufügen</button>
         </div>
     </div>
 
@@ -143,30 +154,38 @@
         const WS_URL = "wss://free.blr2.piesocket.com/v3/1?api_key=V0c69JMYbOjQRrluNWMYgxH0vCTWx8vFZUXcCcgo&notify_self=1";
         let ws;
         let currentState = { mainMode: "AUS", auxMode: "AUS", erhalt: false };
+        let lastPing = Date.now();
 
-        const lightNames = {
-            "LICHT_LOBBY": "Lobby", "LICHT_CHECKIN": "Check-In", "LICHT_RESTAURANT": "Restaurant",
-            "LICHT_VIP_REST": "VIP Restaurant", "LICHT_SUS": "Spiel & Spass", "LICHT_AUSSEN_HINTEN": "Aussen Hinten",
-            "LICHT_AUSSEN_VORNE": "Aussen Vorne", "LICHT_AUSSEN": "Aussen", "LICHT_DECK_OBEN": "Oberdeck",
-            "LICHT_FIT": "Fitness", "LICHT_COCK": "Cockpit", "LICHT_BRUECKE": "Brücke"
-        };
+        // Offline Detector
+        setInterval(() => {
+            if (Date.now() - lastPing > 12000) {
+                document.getElementById('offline-popup').style.display = "flex";
+            } else {
+                document.getElementById('offline-popup').style.display = "none";
+            }
+        }, 2000);
 
         function connectWS() {
             document.getElementById('conn-status').innerText = "Verbinde..."; document.getElementById('conn-status').style.color = "orange";
             ws = new WebSocket(WS_URL);
-            ws.onopen = () => { document.getElementById('conn-status').innerText = "Online & Synchronisiert"; document.getElementById('conn-status').style.color = "lime"; };
+            ws.onopen = () => { 
+                document.getElementById('conn-status').innerText = "Online & Synchronisiert"; 
+                document.getElementById('conn-status').style.color = "lime"; 
+                lastPing = Date.now(); 
+                // FRAGT EINMALIG NACH DEM FULL SYNC!
+                sendMsg({type: "REQUEST_SYNC"});
+            };
             ws.onmessage = (event) => { try { handleData(JSON.parse(event.data)); } catch(e) {} };
             ws.onclose = () => { document.getElementById('conn-status').innerText = "Verbindung getrennt. Reconnect..."; document.getElementById('conn-status').style.color = "red"; setTimeout(connectWS, 3000); };
         }
 
         function handleData(data) {
+            lastPing = Date.now(); 
+            
             if(data.type === "TELEMETRY") {
                 currentState.mainMode = data.mainMode; currentState.auxMode = data.auxMode; currentState.erhalt = data.erhalt;
-                
-                document.getElementById('tank-val').innerText = data.fuel;
-                document.getElementById('tank-bar').style.width = Math.min(100, (data.fuel / 14) * 100) + '%';
-                document.getElementById('batt-val').innerText = data.batt;
-                document.getElementById('batt-bar').style.width = (data.batt / 15) * 100 + '%';
+                document.getElementById('tank-val').innerText = data.fuel; document.getElementById('tank-bar').style.width = Math.min(100, (data.fuel / 14) * 100) + '%';
+                document.getElementById('batt-val').innerText = data.batt; document.getElementById('batt-bar').style.width = (data.batt / 15) * 100 + '%';
 
                 const colMap = {"RUNNING": "lime", "STOPPED": "#ff5555", "STARTING": "orange", "STOPPING": "orange"};
                 document.getElementById('main-state').innerText = data.mainState; document.getElementById('main-state').style.color = colMap[data.mainState] || "white";
@@ -182,23 +201,22 @@
                 if(data.pwrOut !== undefined) {
                     let pBtn = document.getElementById('pwr-btn');
                     pBtn.innerText = data.pwrOut ? "HAUPTSTROM AN" : "HAUPTSTROM AUS";
-                    pBtn.style.background = data.pwrOut ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)";
-                    pBtn.style.borderColor = data.pwrOut ? "lime" : "red";
+                    pBtn.style.background = data.pwrOut ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)"; pBtn.style.borderColor = data.pwrOut ? "lime" : "red";
                 }
             }
             else if(data.type === "HATCH_STATUS") {
-                document.getElementById('hatch-state').innerText = data.state ? "AUF" : "ZU";
-                document.getElementById('hatch-state').style.color = data.state ? "lime" : "#ff5555";
+                document.getElementById('hatch-state').innerText = data.state ? "AUF" : "ZU"; document.getElementById('hatch-state').style.color = data.state ? "lime" : "#ff5555";
             }
             else if(data.type === "WEB_SYNC") {
                 const lCont = document.getElementById('light-container');
-                for(const [key, val] of Object.entries(data.lights)) {
+                for(const [key, name] of Object.entries(data.config.lights)) {
                     let btn = document.getElementById('lbtn-' + key);
                     if(!btn) {
-                        btn = document.createElement('button'); btn.id = 'lbtn-' + key; btn.innerText = lightNames[key] || key;
+                        btn = document.createElement('button'); btn.id = 'lbtn-' + key; btn.innerText = name;
                         btn.onclick = () => sendMsg({type: "LIGHT_TOGGLE", light: key}); lCont.appendChild(btn);
                     }
-                    btn.className = "light-btn " + (val === 15 ? "on" : "");
+                    let stateVal = data.lights[key] || 0;
+                    btn.className = "light-btn " + (stateVal === 15 ? "on" : "");
                 }
                 
                 const dCont = document.getElementById('door-container');
@@ -206,6 +224,8 @@
                 for(const [name, state] of Object.entries(data.doors)) {
                     let safeId = 'door-' + name.replace(/[^a-zA-Z0-9]/g, '');
                     let dEl = document.getElementById(safeId);
+                    let alias = data.config.doors[name] || name; 
+                    
                     if(!dEl) {
                         dEl = document.createElement('div'); dEl.id = safeId; dEl.className = "door-item";
                         dEl.innerHTML = `<div class="door-title"></div><div class="door-controls">
@@ -215,7 +235,7 @@
                                 <button class="door-btn lock-btn"></button></div>`;
                         dCont.appendChild(dEl);
                     }
-                    dEl.querySelector('.door-title').innerHTML = `<strong>${name}</strong> [${state.state}] <span style="color:red">${state.locked ? 'VERRIEGELT' : ''}</span>`;
+                    dEl.querySelector('.door-title').innerHTML = `<strong>${alias}</strong> [${state.state}] <span style="color:red">${state.locked ? 'VERRIEGELT' : ''}</span>`;
                     let lBtn = dEl.querySelector('.lock-btn');
                     lBtn.style.background = state.locked ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)";
                     lBtn.innerText = state.locked ? "ENTRIEGELN" : "VERRIEGELN";
@@ -233,12 +253,20 @@
         function sendMsg(obj) { if(ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
         function sendEngineCmd(m, a, e) { sendMsg({ type: "ENGINE_CMD", main: m !== null ? m : currentState.mainMode, aux: a !== null ? a : currentState.auxMode, erhalt: e !== null ? e : currentState.erhalt }); }
         function toggleErhalt() { sendEngineCmd(null, null, !currentState.erhalt); }
-        
         function sendRoomCmd(type, command) {
             let target = document.getElementById('room-select').value;
             let payload = { type: type, command: command, target: target };
             if (command === 'ELECTRONICS_OFF') payload.data = true;
             sendMsg(payload);
+        }
+        function updateConfig(action, idField, nameField) {
+            let idVal = document.getElementById(idField).value;
+            let nameVal = document.getElementById(nameField).value;
+            if(idVal !== "") {
+                sendMsg({type: "GATEWAY_CONFIG", action: action, id: idVal, name: nameVal});
+                document.getElementById(idField).value = ""; document.getElementById(nameField).value = "";
+                alert("Erfolgreich an Gateway gesendet!");
+            }
         }
 
         function switchView(id) {
